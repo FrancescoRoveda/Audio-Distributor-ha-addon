@@ -3,6 +3,7 @@ name: Audio Distributor
 version: "0.3.0"
 slug: audio-distributor
 description: Multi-protocol audio distribution server with Snapcast, Spotify Connect, and AirPlay support
+image: ghcr.io/francescoroveda/{arch}-audio-distributor
 url: "https://github.com/FrancescoRoveda/Audio-Distributor-ha-addon"
 audio: true
 host_network: true
