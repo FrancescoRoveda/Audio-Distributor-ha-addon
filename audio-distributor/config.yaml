@@ -14,11 +14,7 @@ privileged:
   - SYS_ADMIN
 init: false
 arch:
-  - armhf
-  - armv7
   - aarch64
-  - amd64
-  - i386
 map:
   - share:rw
 ports:
