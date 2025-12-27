@@ -6,6 +6,10 @@
 
 readonly LOG_PREFIX="[avahi]"
 
+# Ensure directories exist
+mkdir -p /var/run/avahi-daemon
+mkdir -p /var/run/dbus
+
 # Wait for D-Bus
 bashio::log.info "${LOG_PREFIX} Waiting for dbus..."
 timeout=30

@@ -2,7 +2,7 @@
 ARG BUILD_FROM=ghcr.io/hassio-addons/base:17.2.5
 FROM $BUILD_FROM
 
-# Install all packages from Alpine repositories (no compilation needed!)
+# Install all packages from Alpine repositories
 # librespot is in edge/testing repository
 RUN \
     apk add --no-cache \
@@ -14,10 +14,17 @@ RUN \
         shairport-sync \
     && apk add --no-cache \
         --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing \
-        librespot
+        librespot \
+    \
+    # Create required directories
+    && mkdir -p /var/run/dbus \
+    && mkdir -p /var/run/avahi-daemon
 
 # Copy root filesystem
 COPY rootfs /
+
+# Make all service scripts executable
+RUN chmod +x /etc/services.d/*/run /etc/services.d/*/finish 2>/dev/null || true
 
 # Build arguments
 ARG BUILD_ARCH

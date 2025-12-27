@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-config
 name: Audio Distributor
-version: "0.3.0"
+version: "0.3.1"
 slug: audio-distributor
 description: Multi-protocol audio distribution server with Snapcast, Spotify Connect, and AirPlay support
 image: ghcr.io/francescoroveda/{arch}-audio-distributor

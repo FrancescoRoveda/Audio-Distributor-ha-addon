@@ -8,4 +8,10 @@ readonly LOG_PREFIX="[dbus]"
 
 bashio::log.info "${LOG_PREFIX} Starting dbus-daemon..."
 
-exec dbus-daemon --system --nofork
+# Ensure socket directory exists
+mkdir -p /var/run/dbus
+
+# Clean up stale pid file if exists
+rm -f /var/run/dbus/pid
+
+exec dbus-daemon --system --nofork --nopidfile
