@@ -2,40 +2,19 @@
 ARG BUILD_FROM=ghcr.io/hassio-addons/base:17.2.5
 FROM $BUILD_FROM
 
-# Install dependencies and build librespot
-# See https://github.com/librespot-org/librespot/wiki/Compiling for librespot compile features
+# Install all packages from Alpine repositories (no compilation needed!)
+# librespot is in edge/testing repository
 RUN \
-    apk add --no-cache --virtual .build-dependencies \
-        build-base \
-        cargo \
-        git \
-        protobuf-dev \
-        avahi-dev \
-    \
-    && apk add --no-cache \
+    apk add --no-cache \
         dbus \
         nss \
         avahi-compat-libdns_sd \
         avahi \
         snapcast-server \
         shairport-sync \
-    \
-    && cargo install \
-        --locked \
-        --no-default-features \
-        --features with-dns-sd \
-        --root /usr \
-        --bin librespot \
-        --version 0.6.0 \
-        --verbose \
-        -- librespot \
-    \
-    && apk del --no-cache --purge .build-dependencies \
-    && rm -fr \
-        /tmp/* \
-        ~/.cargo \
-        /usr/.crates.toml \
-        /usr/.crates2.json
+    && apk add --no-cache \
+        --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing \
+        librespot
 
 # Copy root filesystem
 COPY rootfs /
@@ -56,11 +35,11 @@ LABEL \
     io.hass.arch="${BUILD_ARCH}" \
     io.hass.type="addon" \
     io.hass.version=${BUILD_VERSION} \
-    maintainer="corneyl" \
+    maintainer="FrancescoRoveda" \
     org.opencontainers.image.title="${BUILD_NAME}" \
     org.opencontainers.image.description="${BUILD_DESCRIPTION}" \
     org.opencontainers.image.vendor="Audio Distributor Add-on" \
-    org.opencontainers.image.authors="corneyl" \
+    org.opencontainers.image.authors="FrancescoRoveda" \
     org.opencontainers.image.licenses="MIT" \
     org.opencontainers.image.url="https://github.com/${BUILD_REPOSITORY}" \
     org.opencontainers.image.source="https://github.com/${BUILD_REPOSITORY}" \
