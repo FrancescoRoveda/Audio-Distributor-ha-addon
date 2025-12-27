@@ -3,7 +3,7 @@ name: Audio Distributor
 version: "0.3.0"
 slug: audio-distributor
 description: Multi-protocol audio distribution server with Snapcast, Spotify Connect, and AirPlay support
-url: "https://github.com/corneyl/hassio-addons/tree/main/snapcast-server"
+url: "https://github.com/FrancescoRoveda/Audio-Distributor-ha-addon"
 audio: true
 host_network: true
 ingress: true
@@ -53,4 +53,3 @@ schema:
   airplay_enabled: bool
   airplay_name: str
   log_level: list(trace|debug|info|notice|warning|error|fatal)
-image: "ghcr.io/corneyl/{arch}-audio-distributor"
