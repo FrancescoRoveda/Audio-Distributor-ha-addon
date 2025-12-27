@@ -12,13 +12,24 @@ RUN \
         avahi \
         snapcast-server \
         shairport-sync \
+        wget \
+        unzip \
     && apk add --no-cache \
         --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing \
         librespot \
     \
+    # Download and install Snapweb
+    && wget -q https://github.com/badaix/snapweb/releases/download/v0.9.3/snapweb.zip \
+    && mkdir -p /usr/share/snapserver/snapweb \
+    && unzip -o snapweb.zip -d /usr/share/snapserver/snapweb \
+    && rm snapweb.zip \
+    \
     # Create required directories
     && mkdir -p /var/run/dbus \
-    && mkdir -p /var/run/avahi-daemon
+    && mkdir -p /var/run/avahi-daemon \
+    \
+    # Cleanup
+    && apk del --no-cache wget unzip
 
 # Copy root filesystem
 COPY rootfs /
