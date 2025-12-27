@@ -1,0 +1,15 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Audio Distributor - Snapcast Server finish handler
+# ==============================================================================
+
+readonly LOG_PREFIX="[snapcast-server]"
+readonly EXIT_CODE=${1}
+
+if [[ "${EXIT_CODE}" -ne 0 ]] && [[ "${EXIT_CODE}" -ne 256 ]]; then
+    bashio::log.error "${LOG_PREFIX} Crashed with exit code ${EXIT_CODE}"
+    echo "${EXIT_CODE}" > /run/s6-linux-init-container-results/exitcode
+    exec /run/s6/basedir/bin/halt
+fi
+
+bashio::log.info "${LOG_PREFIX} Service stopped, will restart..."

@@ -1,0 +1,16 @@
+// Shairport-sync configuration for Audio Distributor
+// See: https://github.com/mikebrady/shairport-sync
+
+general = {
+    name = "%AIRPLAY_NAME%"; // Replaced at runtime
+    interpolation = "basic";
+};
+
+alsa = {
+    // Disabled - using pipe output
+};
+
+pipe = {
+    name = "/tmp/snapfifo_airplay";
+    audio_backend_buffer_desired_length_in_seconds = 2.0;
+};

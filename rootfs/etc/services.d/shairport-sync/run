@@ -1,0 +1,89 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Audio Distributor - AirPlay Receiver (shairport-sync)
+# ==============================================================================
+
+readonly LOG_PREFIX="[shairport-sync]"
+readonly CONFIG_TEMPLATE="/etc/shairport-sync.conf.template"
+readonly CONFIG_FILE="/etc/shairport-sync.conf"
+
+# ==============================================================================
+# Logging helpers
+# ==============================================================================
+log_info()    { bashio::log.info    "${LOG_PREFIX} $*"; }
+log_debug()   { bashio::log.debug   "${LOG_PREFIX} $*"; }
+log_warning() { bashio::log.warning "${LOG_PREFIX} $*"; }
+log_error()   { bashio::log.error   "${LOG_PREFIX} $*"; }
+log_notice()  { bashio::log.notice  "${LOG_PREFIX} $*"; }
+
+# ==============================================================================
+# Check if AirPlay is enabled
+# ==============================================================================
+if ! bashio::config.true 'airplay_enabled'; then
+    log_info "AirPlay is disabled in configuration"
+    log_info "Service will sleep indefinitely"
+    exec sleep infinity
+fi
+
+# ==============================================================================
+# Wait for dependencies
+# ==============================================================================
+log_info "Waiting for avahi-daemon..."
+timeout=30
+elapsed=0
+while [ ! -e /run/avahi-daemon/pid ]; do
+    sleep 1
+    elapsed=$((elapsed + 1))
+    if [ $elapsed -ge $timeout ]; then
+        log_error "Timeout waiting for avahi-daemon after ${timeout}s"
+        exit 1
+    fi
+done
+log_info "avahi-daemon ready (${elapsed}s)"
+
+# Wait for snapcast-server to create the FIFO
+log_info "Waiting for snapcast-server FIFO..."
+timeout=30
+elapsed=0
+while [ ! -p /tmp/snapfifo_airplay ]; do
+    sleep 1
+    elapsed=$((elapsed + 1))
+    if [ $elapsed -ge $timeout ]; then
+        log_warning "FIFO not created by snapcast-server, creating it now"
+        mkfifo /tmp/snapfifo_airplay
+        chmod 666 /tmp/snapfifo_airplay
+        break
+    fi
+done
+log_info "FIFO ready"
+
+# ==============================================================================
+# Generate configuration
+# ==============================================================================
+airplay_name=$(bashio::config 'airplay_name')
+
+log_info "Generating shairport-sync configuration..."
+sed "s/%AIRPLAY_NAME%/${airplay_name}/g" "${CONFIG_TEMPLATE}" > "${CONFIG_FILE}"
+log_debug "Configuration written to ${CONFIG_FILE}"
+
+# ==============================================================================
+# Start shairport-sync
+# ==============================================================================
+log_notice "=== AirPlay Receiver starting ==="
+log_info "Device name: '${airplay_name}'"
+log_info "Output: pipe to /tmp/snapfifo_airplay"
+
+# Configure verbosity based on addon log level
+verbosity=""
+if bashio::config.equals 'log_level' 'debug' || bashio::config.equals 'log_level' 'trace'; then
+    verbosity="-vvv"
+    log_debug "Maximum verbosity enabled"
+elif bashio::config.equals 'log_level' 'info'; then
+    verbosity="-v"
+fi
+
+# Run shairport-sync with pipe backend
+exec shairport-sync \
+    --configfile="${CONFIG_FILE}" \
+    --output=pipe \
+    ${verbosity}

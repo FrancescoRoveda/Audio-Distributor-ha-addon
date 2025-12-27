@@ -1,0 +1,11 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Audio Distributor - D-Bus daemon
+# Required for Avahi service discovery
+# ==============================================================================
+
+readonly LOG_PREFIX="[dbus]"
+
+bashio::log.info "${LOG_PREFIX} Starting dbus-daemon..."
+
+exec dbus-daemon --system --nofork

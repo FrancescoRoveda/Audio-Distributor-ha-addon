@@ -1,0 +1,27 @@
+configuration:
+  streams:
+    name: Streams
+    description: Custom audio streams. See https://github.com/badaix/snapcast/blob/master/doc/configuration.md
+  buffer:
+    name: Buffer
+    description: Audio buffer in milliseconds
+  codec:
+    name: Codec
+    description: Codec for streaming to clients (flac recommended)
+  send_to_muted:
+    name: Send to muted clients
+  sampleformat:
+    name: Sample format
+    description: "Sample rate:bits:channels (e.g., 48000:16:2)"
+  spotify_name:
+    name: Spotify device name
+    description: Name shown in Spotify Connect
+  airplay_enabled:
+    name: Enable AirPlay
+    description: Enable AirPlay receiver for Apple devices
+  airplay_name:
+    name: AirPlay device name
+    description: Name shown on Apple devices
+  log_level:
+    name: Log level
+    description: Logging verbosity (debug for troubleshooting)

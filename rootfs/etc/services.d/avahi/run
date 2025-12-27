@@ -1,0 +1,25 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Audio Distributor - Avahi daemon
+# Provides mDNS/DNS-SD service discovery for Spotify and AirPlay
+# ==============================================================================
+
+readonly LOG_PREFIX="[avahi]"
+
+# Wait for D-Bus
+bashio::log.info "${LOG_PREFIX} Waiting for dbus..."
+timeout=30
+elapsed=0
+while [ ! -e /var/run/dbus/system_bus_socket ]; do
+    sleep 1
+    elapsed=$((elapsed + 1))
+    if [ $elapsed -ge $timeout ]; then
+        bashio::log.error "${LOG_PREFIX} Timeout waiting for dbus after ${timeout}s"
+        exit 1
+    fi
+done
+bashio::log.info "${LOG_PREFIX} dbus ready (${elapsed}s)"
+
+bashio::log.info "${LOG_PREFIX} Starting avahi-daemon..."
+
+exec avahi-daemon --no-drop-root -f /etc/avahi/avahi-daemon.conf

@@ -1,0 +1,150 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Audio Distributor - Snapcast Server
+# Manages the snapcast server with enhanced logging
+# ==============================================================================
+
+readonly CONFIG_FILE="/etc/snapserver.conf"
+readonly LOG_PREFIX="[snapcast-server]"
+
+# ==============================================================================
+# Logging helpers with structured prefixes
+# ==============================================================================
+log_info()    { bashio::log.info    "${LOG_PREFIX} $*"; }
+log_debug()   { bashio::log.debug   "${LOG_PREFIX} $*"; }
+log_warning() { bashio::log.warning "${LOG_PREFIX} $*"; }
+log_error()   { bashio::log.error   "${LOG_PREFIX} $*"; }
+log_notice()  { bashio::log.notice  "${LOG_PREFIX} $*"; }
+
+# ==============================================================================
+# Wait for dependencies with timeout
+# ==============================================================================
+wait_for_avahi() {
+    local timeout=30
+    local elapsed=0
+    
+    log_info "Waiting for avahi-daemon..."
+    while [ ! -e /run/avahi-daemon/pid ]; do
+        sleep 1
+        elapsed=$((elapsed + 1))
+        if [ $elapsed -ge $timeout ]; then
+            log_error "Timeout waiting for avahi-daemon after ${timeout}s"
+            return 1
+        fi
+    done
+    log_info "avahi-daemon ready (${elapsed}s)"
+    return 0
+}
+
+# ==============================================================================
+# Configure log level from addon options
+# ==============================================================================
+configure_logging() {
+    if bashio::config.has_value "log_level"; then
+        local level
+        level=$(bashio::config 'log_level')
+        log_info "Setting log level to '${level}'"
+        bashio::log.level "${level}"
+    fi
+}
+
+# ==============================================================================
+# Generate snapserver configuration
+# ==============================================================================
+generate_config() {
+    log_info "Generating snapserver configuration..."
+    
+    # Start with stream section
+    echo "[stream]" > "${CONFIG_FILE}"
+    
+    # Add user-defined streams
+    local stream_count=0
+    for stream in $(bashio::config 'streams.streams'); do
+        echo "stream = ${stream}" >> "${CONFIG_FILE}"
+        log_debug "Added user stream: ${stream}"
+        stream_count=$((stream_count + 1))
+    done
+    log_info "Configured ${stream_count} user-defined stream(s)"
+    
+    # Add Spotify source (librespot)
+    local spotify_name
+    spotify_name=$(bashio::config 'spotify_name')
+    {
+        echo "stream = librespot:///usr/bin/librespot?name=Spotify&devicename=${spotify_name}&disable_audio_cache=true"
+    } >> "${CONFIG_FILE}"
+    log_info "Added Spotify Connect stream: '${spotify_name}'"
+    
+    # Add AirPlay source if enabled
+    if bashio::config.true 'airplay_enabled'; then
+        local airplay_name
+        airplay_name=$(bashio::config 'airplay_name')
+        
+        # Create FIFO pipe for shairport-sync if not exists
+        if [ ! -p /tmp/snapfifo_airplay ]; then
+            mkfifo /tmp/snapfifo_airplay
+            chmod 666 /tmp/snapfifo_airplay
+            log_debug "Created AirPlay FIFO pipe: /tmp/snapfifo_airplay"
+        fi
+        
+        echo "stream = pipe:///tmp/snapfifo_airplay?name=AirPlay&sampleformat=44100:16:2" >> "${CONFIG_FILE}"
+        log_info "Added AirPlay stream: '${airplay_name}'"
+    else
+        log_info "AirPlay is disabled"
+    fi
+    
+    # Add server settings
+    {
+        echo "buffer = $(bashio::config 'buffer')"
+        echo "codec = $(bashio::config 'codec')"
+        echo "send_to_muted = $(bashio::config 'send_to_muted')"
+        echo "sampleformat = $(bashio::config 'sampleformat')"
+        echo ""
+        echo "[http]"
+        echo "doc_root = /usr/share/snapserver/snapweb"
+    } >> "${CONFIG_FILE}"
+    
+    log_debug "Configuration generated:"
+    if bashio::config.equals 'log_level' 'debug' || bashio::config.equals 'log_level' 'trace'; then
+        while IFS= read -r line; do
+            log_debug "  ${line}"
+        done < "${CONFIG_FILE}"
+    fi
+}
+
+# ==============================================================================
+# Configure Snapweb for ingress
+# ==============================================================================
+configure_snapweb() {
+    log_info "Configuring Snapweb..."
+    cat <<'EOT' > /usr/share/snapserver/snapweb/config.js
+"use strict";
+let config = {
+    baseUrl: (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + window.location.pathname.replace(/\/$/, '')
+}
+EOT
+    log_debug "Snapweb configured for ingress"
+}
+
+# ==============================================================================
+# Main execution
+# ==============================================================================
+main() {
+    log_notice "=== Audio Distributor - Snapcast Server starting ==="
+    
+    configure_logging
+    
+    if ! wait_for_avahi; then
+        exit 1
+    fi
+    
+    generate_config
+    configure_snapweb
+    
+    log_info "Starting snapserver..."
+    log_debug "Command: /usr/bin/snapserver -c ${CONFIG_FILE}"
+    
+    # Execute snapserver
+    exec /usr/bin/snapserver -c "${CONFIG_FILE}"
+}
+
+main "$@"
