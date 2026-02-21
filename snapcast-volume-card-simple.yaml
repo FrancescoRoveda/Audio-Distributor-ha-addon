@@ -1,0 +1,16 @@
+type: vertical-stack
+cards:
+  # Overall Group Volume Control
+  - type: media-control
+    entity: media_player.cucina_sala_snapcast_group
+  
+  # Individual Speaker Controls
+  - type: horizontal-stack
+    cards:
+      # Cucina Speaker
+      - type: media-control
+        entity: media_player.cucina_snapcast_client
+      
+      # Sala Speaker
+      - type: media-control
+        entity: media_player.sala_snapcast_client

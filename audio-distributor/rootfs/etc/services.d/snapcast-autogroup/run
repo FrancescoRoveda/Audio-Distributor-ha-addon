@@ -1,0 +1,7 @@
+#!/usr/bin/with-contenv bashio
+# Wait for snapserver to start and open port 1705
+bashio::log.info "Starting Snapcast autogroup service..."
+sleep 5
+
+# Run the python script
+python3 /usr/local/bin/snapcast-autogroup.py

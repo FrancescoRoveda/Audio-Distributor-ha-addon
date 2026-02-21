@@ -1,0 +1,71 @@
+type: vertical-stack
+cards:
+  # Header
+  - type: markdown
+    content: |
+      ## 🎵 Snapcast Audio Control
+      Control volume for all speakers or individually
+    card_mod:
+      style: |
+        ha-card {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border-radius: 16px 16px 0 0;
+          padding: 8px;
+          box-shadow: none;
+        }
+        h2 {
+          margin: 0;
+          font-size: 1.2em;
+          font-weight: 600;
+        }
+        p {
+          margin: 4px 0 0 0;
+          opacity: 0.9;
+          font-size: 0.9em;
+        }
+  
+  # Overall Group Volume
+  - type: entities
+    title: 🔊 All Speakers
+    show_header_toggle: false
+    card_mod:
+      style: |
+        ha-card {
+          border-radius: 0;
+          box-shadow: none;
+          border-top: 1px solid rgba(0,0,0,0.1);
+        }
+    entities:
+      - entity: media_player.cucina_sala_snapcast_group
+        type: custom:slider-entity-row
+        name: Master Volume
+        icon: mdi:speaker-multiple
+        full_row: true
+        step: 1
+  
+  # Individual Speakers
+  - type: entities
+    title: 🎚️ Individual Speakers
+    show_header_toggle: false
+    card_mod:
+      style: |
+        ha-card {
+          border-radius: 0 0 16px 16px;
+          box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+          border-top: 1px solid rgba(0,0,0,0.1);
+        }
+    entities:
+      - entity: media_player.cucina_snapcast_client
+        type: custom:slider-entity-row
+        name: 🍳 Cucina
+        icon: mdi:speaker
+        full_row: true
+        step: 1
+      
+      - entity: media_player.sala_snapcast_client
+        type: custom:slider-entity-row
+        name: 🛋️ Sala
+        icon: mdi:speaker
+        full_row: true
+        step: 1

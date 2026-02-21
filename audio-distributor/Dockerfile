@@ -12,6 +12,7 @@ RUN \
         avahi \
         snapcast-server \
         shairport-sync \
+        python3 \
         wget \
         unzip \
     && apk add --no-cache \

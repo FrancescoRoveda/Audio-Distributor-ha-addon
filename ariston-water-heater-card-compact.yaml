@@ -1,0 +1,123 @@
+type: vertical-stack
+cards:
+  # Compact Header with Key Info
+  - type: custom:mushroom-title-card
+    title: 🚿 Scaldabagno
+    subtitle: >-
+      {{ states('sensor.ariston_average_showers') }} docce • 
+      {{ states('sensor.ariston_proc_req_temp') }}°C •
+      {% if is_state('binary_sensor.ariston_is_heating', 'on') %}🔥 Riscaldamento{% else %}✓ Pronto{% endif %}
+
+  # Quick Controls
+  - type: horizontal-stack
+    cards:
+      # Power
+      - type: custom:mushroom-entity-card
+        entity: switch.ariston_power
+        name: Power
+        icon: mdi:power
+        tap_action:
+          action: toggle
+        fill_container: true
+        card_mod:
+          style: |
+            ha-card {
+              background: {% if is_state('switch.ariston_power', 'on') %}
+                linear-gradient(135deg, #11998e 0%, #38ef7d 100%)
+              {% else %}
+                rgba(255, 0, 0, 0.2)
+              {% endif %};
+            }
+
+      # Eco Mode
+      - type: custom:mushroom-entity-card
+        entity: switch.ariston_eco_mode
+        name: Eco
+        icon: mdi:leaf
+        tap_action:
+          action: toggle
+        fill_container: true
+        icon_color: "{{ 'green' if is_state('switch.ariston_eco_mode', 'on') else 'grey' }}"
+
+      # Skip Shower
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.skip_evening_shower
+        name: Salta Sera
+        icon: mdi:sleep
+        tap_action:
+          action: toggle
+        fill_container: true
+        icon_color: "{{ 'amber' if is_state('input_boolean.skip_evening_shower', 'on') else 'grey' }}"
+
+  # Status Chips
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: entity
+        entity: sensor.ariston_average_showers
+        icon: mdi:shower-head
+        icon_color: cyan
+        content_info: state
+
+      - type: entity
+        entity: sensor.ariston_proc_req_temp
+        icon: mdi:thermometer
+        icon_color: orange
+        content_info: state
+
+      - type: entity
+        entity: sensor.ariston_remaining_time
+        icon: mdi:timer
+        icon_color: blue
+        content_info: state
+
+      - type: entity
+        entity: binary_sensor.ariston_is_heating
+        icon: mdi:fire
+        icon_color: "{{ 'red' if is_state('binary_sensor.ariston_is_heating', 'on') else 'grey' }}"
+        content_info: none
+
+      - type: entity
+        entity: sensor.ariston_domestic_hot_water_total_energy_consumption
+        icon: mdi:lightning-bolt
+        icon_color: yellow
+        content_info: state
+
+  # Expandable Advanced Settings
+  - type: custom:mushroom-title-card
+    title: ⚙️ Impostazioni Avanzate
+    subtitle: ""
+
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      # Water Heater Entity
+      - type: custom:mushroom-entity-card
+        entity: water_heater.casa
+        name: Controllo Completo
+        icon: mdi:water-boiler
+        tap_action:
+          action: more-info
+
+      # Max Temperature
+      - type: custom:mushroom-number-card
+        entity: number.ariston_max_setpoint_temperature
+        name: Temp. Max
+        icon: mdi:thermometer-high
+        icon_color: red
+
+      # Anti-Legionella
+      - type: custom:mushroom-entity-card
+        entity: switch.ariston_anti_legionella
+        name: Anti-Legionella
+        icon: mdi:bacteria-outline
+        tap_action:
+          action: toggle
+        icon_color: "{{ 'purple' if is_state('switch.ariston_anti_legionella', 'on') else 'grey' }}"
+
+      # Errors
+      - type: custom:mushroom-entity-card
+        entity: sensor.ariston_errors_count
+        name: Errori
+        icon: mdi:alert-circle
+        icon_color: "{{ 'red' if states('sensor.ariston_errors_count')|int > 0 else 'green' }}"

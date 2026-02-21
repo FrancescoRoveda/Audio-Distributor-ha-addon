@@ -1,0 +1,183 @@
+type: vertical-stack
+cards:
+  # Header with Title
+  - type: custom:mushroom-title-card
+    title: 🚿 Scaldabagno Ariston
+    subtitle: Controllo Acqua Calda
+
+  # Main Controls
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      # Power Switch
+      - type: custom:mushroom-entity-card
+        entity: switch.ariston_power
+        name: Alimentazione
+        icon: mdi:power
+        tap_action:
+          action: toggle
+        card_mod:
+          style: |
+            ha-card {
+              background: {% if is_state('switch.ariston_power', 'on') %}
+                linear-gradient(135deg, #11998e 0%, #38ef7d 100%)
+              {% else %}
+                rgba(255, 255, 255, 0.05)
+              {% endif %};
+            }
+
+      # Water Heater Status
+      - type: custom:mushroom-entity-card
+        entity: water_heater.casa
+        name: Stato
+        icon: mdi:water-boiler
+        tap_action:
+          action: more-info
+
+  # Temperature & Status Row
+  - type: grid
+    columns: 3
+    square: false
+    cards:
+      # Current Temperature
+      - type: custom:mushroom-entity-card
+        entity: sensor.ariston_proc_req_temp
+        name: Temperatura
+        icon: mdi:thermometer
+        icon_color: orange
+
+      # Heating Status
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.ariston_is_heating
+        name: Riscaldamento
+        icon: mdi:fire
+        icon_color: "{{ 'red' if is_state('binary_sensor.ariston_is_heating', 'on') else 'grey' }}"
+
+      # Remaining Time
+      - type: custom:mushroom-entity-card
+        entity: sensor.ariston_remaining_time
+        name: Tempo Rimasto
+        icon: mdi:timer-sand
+        icon_color: blue
+
+  # Shower Management
+  - type: custom:mushroom-title-card
+    title: 🚿 Gestione Docce
+    subtitle: ""
+
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      # Average Showers
+      - type: custom:mushroom-entity-card
+        entity: sensor.ariston_average_showers
+        name: Docce Disponibili
+        icon: mdi:shower-head
+        icon_color: cyan
+        card_mod:
+          style: |
+            ha-card {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+
+      # Skip Evening Shower Toggle
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.skip_evening_shower
+        name: Salta Doccia Sera
+        icon: mdi:sleep
+        tap_action:
+          action: toggle
+        icon_color: "{{ 'amber' if is_state('input_boolean.skip_evening_shower', 'on') else 'grey' }}"
+
+  # Modes & Settings
+  - type: custom:mushroom-title-card
+    title: ⚙️ Modalità
+    subtitle: ""
+
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      # Eco Mode
+      - type: custom:mushroom-entity-card
+        entity: switch.ariston_eco_mode
+        name: Modalità Eco
+        icon: mdi:leaf
+        tap_action:
+          action: toggle
+        icon_color: "{{ 'green' if is_state('switch.ariston_eco_mode', 'on') else 'grey' }}"
+
+      # Anti-Legionella
+      - type: custom:mushroom-entity-card
+        entity: switch.ariston_anti_legionella
+        name: Anti-Legionella
+        icon: mdi:bacteria-outline
+        tap_action:
+          action: toggle
+        icon_color: "{{ 'purple' if is_state('switch.ariston_anti_legionella', 'on') else 'grey' }}"
+
+      # Anti-Legionella Cycle Status
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.ariston_anti_legionella_cycle
+        name: Ciclo Anti-Legionella
+        icon: mdi:bacteria
+        icon_color: "{{ 'purple' if is_state('binary_sensor.ariston_anti_legionella_cycle', 'on') else 'grey' }}"
+
+      # Max Temperature Setting
+      - type: custom:mushroom-number-card
+        entity: number.ariston_max_setpoint_temperature
+        name: Temp. Massima
+        icon: mdi:thermometer-high
+        icon_color: red
+
+  # Automations
+  - type: custom:mushroom-title-card
+    title: 🤖 Automazioni
+    subtitle: ""
+
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      # 2 Showers Schedule
+      - type: custom:mushroom-entity-card
+        entity: automation.ariston_2_showers_schedule_54_deg
+        name: Programma 2 Docce
+        icon: mdi:calendar-clock
+        tap_action:
+          action: toggle
+        icon_color: "{{ 'blue' if is_state('automation.ariston_2_showers_schedule_54_deg', 'on') else 'grey' }}"
+
+      # Maintain 1 Shower
+      - type: custom:mushroom-entity-card
+        entity: automation.ariston_maintain_at_least_1_shower
+        name: Mantieni 1 Doccia
+        icon: mdi:shower
+        tap_action:
+          action: toggle
+        icon_color: "{{ 'blue' if is_state('automation.ariston_maintain_at_least_1_shower', 'on') else 'grey' }}"
+
+  # Energy & Diagnostics (Collapsible)
+  - type: custom:mushroom-title-card
+    title: 📊 Statistiche
+    subtitle: ""
+
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      # Energy Consumption
+      - type: custom:mushroom-entity-card
+        entity: sensor.ariston_domestic_hot_water_total_energy_consumption
+        name: Consumo Totale
+        icon: mdi:lightning-bolt
+        icon_color: yellow
+
+      # Errors Count
+      - type: custom:mushroom-entity-card
+        entity: sensor.ariston_errors_count
+        name: Errori
+        icon: mdi:alert-circle
+        icon_color: "{{ 'red' if states('sensor.ariston_errors_count')|int > 0 else 'green' }}"
