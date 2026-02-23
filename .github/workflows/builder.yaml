@@ -22,10 +22,25 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Get changed files
         id: changed_files
-        uses: jitterbit/get-changed-files@v1
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            changed_files="$(git ls-files)"
+          elif [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+            changed_files="$(git ls-files)"
+          else
+            changed_files="$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")"
+          fi
+
+          {
+            echo "all<<EOF"
+            echo "$changed_files"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Find add-on directories
         id: addons
@@ -63,9 +78,13 @@ jobs:
     if: needs.init.outputs.changed == 'true'
     name: Build ${{ matrix.arch }} ${{ matrix.addon }} add-on
     strategy:
+      fail-fast: false
       matrix:
         addon: ${{ fromJson(needs.init.outputs.changed_addons) }}
-        arch: ["aarch64", "amd64", "armv7", "armhf", "i386"]
+        arch: ["aarch64", "amd64"]
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Check out repository
@@ -80,7 +99,10 @@ jobs:
       - name: Check if add-on should be built
         id: check
         run: |
-          if [[ "${{ steps.info.outputs.architectures }}" =~ ${{ matrix.arch }} ]]; then
+          if [[ "${{ steps.info.outputs.image }}" == "null" ]]; then
+            echo "Image property is not defined, skipping build"
+            echo "build_arch=false" >> $GITHUB_OUTPUT;
+          elif [[ "${{ steps.info.outputs.architectures }}" =~ ${{ matrix.arch }} ]]; then
              echo "build_arch=true" >> $GITHUB_OUTPUT;
              echo "image=$(echo ${{ steps.info.outputs.image }} | cut -d'/' -f3)" >> $GITHUB_OUTPUT;
              if [[ -z "${{ github.head_ref }}" ]] && [[ "${{ github.event_name }}" == "push" ]]; then
@@ -101,7 +123,7 @@ jobs:
 
       - name: Build ${{ matrix.addon }} add-on
         if: steps.check.outputs.build_arch == 'true'
-        uses: home-assistant/builder@master
+        uses: home-assistant/builder@2025.11.0
         with:
           args: |
             ${{ env.BUILD_ARGS }} \
