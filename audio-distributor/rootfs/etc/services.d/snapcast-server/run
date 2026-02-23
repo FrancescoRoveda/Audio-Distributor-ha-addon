@@ -70,7 +70,7 @@ generate_config() {
     local spotify_name
     spotify_name=$(bashio::config 'spotify_name')
     {
-        echo "stream = librespot:///usr/bin/librespot?name=Spotify&devicename=${spotify_name}&disable_audio_cache=true"
+        echo "stream = librespot:///usr/bin/librespot?name=Spotify&devicename=${spotify_name}&disable_audio_cache=true&initial_volume=100"
     } >> "${CONFIG_FILE}"
     log_info "Added Spotify Connect stream: '${spotify_name}'"
     
