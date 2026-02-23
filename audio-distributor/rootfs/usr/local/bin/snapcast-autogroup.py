@@ -74,6 +74,14 @@ class SnapcastAutoGroup:
             print(f"Moving clients to Casa group: {all_clients}")
             self.send_req("Group.SetClients", {"id": casa_group['id'], "clients": all_clients})
 
+        # Enforce 100% volume for all clients so Spotify reaches max expected volume
+        for g in groups:
+            for c in g.get('clients', []):
+                vol = c.get('config', {}).get('volume', {})
+                if vol.get('percent') != 100 or vol.get('muted'):
+                    print(f"Setting volume to 100% for client {c['id']}")
+                    self.send_req("Client.SetVolume", {"id": c['id'], "volume": {"muted": False, "percent": 100}})
+
     def run(self):
         while True:
             try:
