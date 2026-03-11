@@ -145,7 +145,7 @@ main() {
     
     export LIBRESPOT_AUTOPLAY="on"
     export LIBRESPOT_ENABLE_VOLUME_NORMALISATION="true"
-    export LIBRESPOT_INITIAL_VOLUME="100"
+    export LIBRESPOT_INITIAL_VOLUME="75"
 
     # Execute snapserver
     exec /usr/bin/snapserver -c "${CONFIG_FILE}"
