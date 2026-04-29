@@ -16,23 +16,35 @@ log_warning() { bashio::log.warning "${LOG_PREFIX} $*"; }
 log_error()   { bashio::log.error   "${LOG_PREFIX} $*"; }
 log_notice()  { bashio::log.notice  "${LOG_PREFIX} $*"; }
 
+dbus_ready() {
+    dbus-send --system --print-reply \
+        --dest=org.freedesktop.DBus \
+        / org.freedesktop.DBus.Peer.Ping >/dev/null 2>&1
+}
+
+avahi_ready() {
+    dbus-send --system --print-reply \
+        --dest=org.freedesktop.Avahi \
+        / org.freedesktop.Avahi.Server.GetState 2>/dev/null | grep -q 'int32 2'
+}
+
 # ==============================================================================
 # Wait for dependencies with timeout
 # ==============================================================================
 wait_for_avahi() {
-    local timeout=30
+    local timeout=60
     local elapsed=0
     
-    log_info "Waiting for avahi-daemon..."
-    while [ ! -e /run/avahi-daemon/pid ]; do
+    log_info "Waiting for Avahi and D-Bus readiness..."
+    while ! dbus_ready || ! avahi_ready; do
         sleep 1
         elapsed=$((elapsed + 1))
         if [ $elapsed -ge $timeout ]; then
-            log_error "Timeout waiting for avahi-daemon after ${timeout}s"
+            log_error "Timeout waiting for Avahi and D-Bus readiness after ${timeout}s"
             return 1
         fi
     done
-    log_info "avahi-daemon ready (${elapsed}s)"
+    log_info "Avahi and D-Bus ready (${elapsed}s)"
     return 0
 }
 
@@ -136,6 +148,9 @@ main() {
     if ! wait_for_avahi; then
         exit 1
     fi
+
+    # Give mDNS registrations a brief window to settle after a cold boot.
+    sleep 3
     
     generate_config
     configure_snapweb

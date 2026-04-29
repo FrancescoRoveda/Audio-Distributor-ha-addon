@@ -16,6 +16,18 @@ log_warning() { bashio::log.warning "${LOG_PREFIX} $*"; }
 log_error()   { bashio::log.error   "${LOG_PREFIX} $*"; }
 log_notice()  { bashio::log.notice  "${LOG_PREFIX} $*"; }
 
+dbus_ready() {
+    dbus-send --system --print-reply \
+        --dest=org.freedesktop.DBus \
+        / org.freedesktop.DBus.Peer.Ping >/dev/null 2>&1
+}
+
+avahi_ready() {
+    dbus-send --system --print-reply \
+        --dest=org.freedesktop.Avahi \
+        / org.freedesktop.Avahi.Server.GetState 2>/dev/null | grep -q 'int32 2'
+}
+
 # ==============================================================================
 # Check if AirPlay is enabled
 # ==============================================================================
@@ -29,17 +41,17 @@ fi
 # Wait for dependencies
 # ==============================================================================
 log_info "Waiting for avahi-daemon..."
-timeout=30
+timeout=60
 elapsed=0
-while [ ! -e /run/avahi-daemon/pid ]; do
+while ! dbus_ready || ! avahi_ready; do
     sleep 1
     elapsed=$((elapsed + 1))
     if [ $elapsed -ge $timeout ]; then
-        log_error "Timeout waiting for avahi-daemon after ${timeout}s"
+        log_error "Timeout waiting for Avahi and D-Bus readiness after ${timeout}s"
         exit 1
     fi
 done
-log_info "avahi-daemon ready (${elapsed}s)"
+log_info "Avahi and D-Bus ready (${elapsed}s)"
 
 # Wait for snapcast-server to create the FIFO
 log_info "Waiting for snapcast-server FIFO..."

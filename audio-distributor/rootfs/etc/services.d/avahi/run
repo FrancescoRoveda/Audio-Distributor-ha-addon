@@ -6,19 +6,25 @@
 
 readonly LOG_PREFIX="[avahi]"
 
+dbus_ready() {
+    dbus-send --system --print-reply \
+        --dest=org.freedesktop.DBus \
+        / org.freedesktop.DBus.Peer.Ping >/dev/null 2>&1
+}
+
 # Ensure directories exist
 mkdir -p /var/run/avahi-daemon
 mkdir -p /var/run/dbus
 
 # Wait for D-Bus
 bashio::log.info "${LOG_PREFIX} Waiting for dbus..."
-timeout=30
+timeout=60
 elapsed=0
-while [ ! -e /var/run/dbus/system_bus_socket ]; do
+while ! dbus_ready; do
     sleep 1
     elapsed=$((elapsed + 1))
     if [ $elapsed -ge $timeout ]; then
-        bashio::log.error "${LOG_PREFIX} Timeout waiting for dbus after ${timeout}s"
+        bashio::log.error "${LOG_PREFIX} Timeout waiting for responsive dbus after ${timeout}s"
         exit 1
     fi
 done
