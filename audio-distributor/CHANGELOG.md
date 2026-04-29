@@ -1,5 +1,8 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 0.3.7
+- Fix D-Bus readiness checks so Avahi-dependent services can start after reboot.
+
 ## 0.3.3
 - Support for amd64, armhf, armv7, i386 architectures.
 - Export Librespot options directly for 100% volume and autoplay.

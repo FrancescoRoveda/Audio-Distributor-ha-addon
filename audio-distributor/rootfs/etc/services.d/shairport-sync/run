@@ -19,7 +19,7 @@ log_notice()  { bashio::log.notice  "${LOG_PREFIX} $*"; }
 dbus_ready() {
     dbus-send --system --print-reply \
         --dest=org.freedesktop.DBus \
-        / org.freedesktop.DBus.Peer.Ping >/dev/null 2>&1
+        /org/freedesktop/DBus org.freedesktop.DBus.ListNames >/dev/null 2>&1
 }
 
 avahi_ready() {
