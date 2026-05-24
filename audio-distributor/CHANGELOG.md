@@ -1,5 +1,8 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 0.3.8
+- Disable the Snapserver librespot watchdog to prevent Spotify Connect disappearing after idle time.
+
 ## 0.3.7
 - Fix D-Bus readiness checks so Avahi-dependent services can start after reboot.
 
