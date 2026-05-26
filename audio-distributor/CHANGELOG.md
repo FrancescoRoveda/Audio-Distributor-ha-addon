@@ -1,5 +1,9 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 0.3.13
+- Return Spotify Connect to Snapserver's internal `librespot://` handler so discovery advertises correctly again.
+- Bind the internal librespot zeroconf to the primary LAN IPv4 address, matching the device name and volume from add-on options.
+
 ## 0.3.12
 - Bind Spotify Connect mDNS discovery to the host's primary LAN IPv4 address so Spotify clients do not receive Docker bridge addresses.
 

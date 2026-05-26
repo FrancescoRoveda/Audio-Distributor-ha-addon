@@ -29,6 +29,47 @@ avahi_ready() {
         / org.freedesktop.Avahi.Server.GetState 2>/dev/null | grep -q 'int32 2'
 }
 
+detect_primary_ipv4() {
+    ip -4 route get 1.1.1.1 2>/dev/null | awk '{
+        for (i = 1; i <= NF; i++) {
+            if ($i == "src") {
+                print $(i + 1)
+                exit
+            }
+        }
+    }'
+}
+
+setup_spotify_env() {
+    local spotify_name default_client_volume zeroconf_ip
+
+    spotify_name=$(bashio::config 'spotify_name')
+    default_client_volume="78"
+    if bashio::config.has_value 'default_client_volume'; then
+        default_client_volume="$(bashio::config 'default_client_volume')"
+    fi
+
+    local CACHE_DIR="/data/librespot"
+    mkdir -p "${CACHE_DIR}/cache" "${CACHE_DIR}/system"
+
+    export LIBRESPOT_AUTOPLAY="on"
+    export LIBRESPOT_ENABLE_VOLUME_NORMALISATION="true"
+    export LIBRESPOT_INITIAL_VOLUME="${default_client_volume}"
+    export LIBRESPOT_CACHE="${CACHE_DIR}/cache"
+    export LIBRESPOT_SYSTEM_CACHE="${CACHE_DIR}/system"
+    export LIBRESPOT_DISABLE_AUDIO_CACHE="true"
+
+    zeroconf_ip="$(detect_primary_ipv4)"
+    if [ -n "${zeroconf_ip}" ]; then
+        export LIBRESPOT_ZEROCONF_INTERFACE="${zeroconf_ip}"
+        log_info "Spotify discovery bound to ${zeroconf_ip}"
+    else
+        log_warning "Could not detect primary IPv4 address; Spotify will advertise on all interfaces"
+    fi
+
+    log_info "Spotify device name: '${spotify_name}', initial volume: ${default_client_volume}%"
+}
+
 # ==============================================================================
 # Wait for dependencies with timeout
 # ==============================================================================
@@ -85,17 +126,10 @@ generate_config() {
     done
     log_info "Configured ${stream_count} user-defined stream(s)"
     
-    # Add Spotify source fed by the supervised librespot service.
+    # Add Spotify source via Snapserver's internal librespot integration.
     local spotify_name
     spotify_name=$(bashio::config 'spotify_name')
-
-    if [ ! -p /tmp/snapfifo_spotify ]; then
-        mkfifo /tmp/snapfifo_spotify
-        chmod 666 /tmp/snapfifo_spotify
-        log_debug "Created Spotify FIFO pipe: /tmp/snapfifo_spotify"
-    fi
-
-    echo "stream = pipe:///tmp/snapfifo_spotify?name=Spotify&sampleformat=44100:16:2" >> "${CONFIG_FILE}"
+    echo "stream = librespot:///usr/bin/librespot?name=Spotify&devicename=${spotify_name}&disable_audio_cache=true&wd_timeout=0" >> "${CONFIG_FILE}"
     log_info "Added Spotify Connect stream: '${spotify_name}'"
     
     # Add AirPlay source if enabled
@@ -171,12 +205,12 @@ main() {
     # Give mDNS registrations a brief window to settle after a cold boot.
     sleep 3
     
+    setup_spotify_env
     generate_config
     configure_snapweb
     
     log_info "Starting snapserver..."
     log_debug "Command: /usr/bin/snapserver -c ${CONFIG_FILE}"
-    # Execute snapserver
     exec /usr/bin/snapserver -c "${CONFIG_FILE}"
 }
 
