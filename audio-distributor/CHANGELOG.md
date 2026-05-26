@@ -1,5 +1,8 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 0.3.11
+- Pass the required `on` value to librespot's `--autoplay` option so Spotify Connect starts with librespot 0.8.0.
+
 ## 0.3.10
 - Build the add-on locally from the repository instead of requiring a prebuilt GHCR image tag.
 

@@ -84,5 +84,5 @@ exec librespot \
     --disable-audio-cache \
     --enable-volume-normalisation \
     --initial-volume "${default_client_volume}" \
-    --autoplay \
+    --autoplay on \
     ${verbosity}
