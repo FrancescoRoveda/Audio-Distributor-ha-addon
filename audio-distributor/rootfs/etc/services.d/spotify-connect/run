@@ -1,6 +1,5 @@
 #!/usr/bin/with-contenv bashio
 # Spotify Connect is now managed internally by Snapserver.
 # This service is kept as a placeholder for future standalone usage.
-s6-svc -d /var/run/s6/services/spotify-connect
 bashio::log.info "[spotify-connect] Managed internally by Snapserver (librespot:// stream)"
 exec sleep infinity
