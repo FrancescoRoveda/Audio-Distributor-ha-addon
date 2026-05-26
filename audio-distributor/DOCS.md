@@ -21,6 +21,7 @@ Multi-protocol audio distribution server for Home Assistant with Snapcast, Spoti
 | `buffer` | int | 1000 | Audio buffer in milliseconds |
 | `codec` | list | flac | Audio codec (pcm, flac, vorbis, opus) |
 | `sampleformat` | string | "48000:16:2" | Sample rate:bits:channels |
+| `default_client_volume` | int | 78 | Safe Snapcast client volume applied when clients connect after a server restart |
 | `log_level` | list | info | Logging verbosity |
 
 ### Custom Streams
@@ -44,6 +45,14 @@ You can add custom audio streams in the `streams.streams` list. See [Snapcast do
 4. Access Snapweb through the add-on sidebar panel
 5. Connect Snapcast clients to your Home Assistant
 6. Play audio via Spotify Connect or AirPlay
+
+## Spotify Connect
+
+Spotify Connect runs as a dedicated `librespot` service and feeds Snapserver through `/tmp/snapfifo_spotify`. The device name shown in Spotify is controlled by `spotify_name`.
+
+## Volume Safety
+
+Snapserver stores client state under `/data/snapserver` so client volumes survive add-on restarts. New clients start at `default_client_volume`, and reconnecting clients above that value are lowered to the configured safe default.
 
 ## Support
 

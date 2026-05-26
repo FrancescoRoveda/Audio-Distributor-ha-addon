@@ -16,6 +16,9 @@ configuration:
   spotify_name:
     name: Spotify device name
     description: Name shown in Spotify Connect
+  default_client_volume:
+    name: Default client volume
+    description: Safe Snapcast client volume applied when clients connect after a server restart
   airplay_enabled:
     name: Enable AirPlay
     description: Enable AirPlay receiver for Apple devices

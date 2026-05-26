@@ -6,6 +6,7 @@
 
 readonly CONFIG_FILE="/etc/snapserver.conf"
 readonly LOG_PREFIX="[snapcast-server]"
+readonly SNAPSERVER_DATA_DIR="/data/snapserver"
 
 # ==============================================================================
 # Logging helpers with structured prefixes
@@ -65,9 +66,15 @@ configure_logging() {
 # ==============================================================================
 generate_config() {
     log_info "Generating snapserver configuration..."
+    mkdir -p "${SNAPSERVER_DATA_DIR}"
     
-    # Start with stream section
-    echo "[stream]" > "${CONFIG_FILE}"
+    # Start with server and stream sections
+    {
+        echo "[server]"
+        echo "datadir = ${SNAPSERVER_DATA_DIR}"
+        echo ""
+        echo "[stream]"
+    } > "${CONFIG_FILE}"
     
     # Add user-defined streams
     local stream_count=0
@@ -78,12 +85,17 @@ generate_config() {
     done
     log_info "Configured ${stream_count} user-defined stream(s)"
     
-    # Add Spotify source (librespot)
+    # Add Spotify source fed by the supervised librespot service.
     local spotify_name
     spotify_name=$(bashio::config 'spotify_name')
-    {
-        echo "stream = librespot:///usr/bin/librespot?name=Spotify&devicename=${spotify_name}&disable_audio_cache=true&wd_timeout=0"
-    } >> "${CONFIG_FILE}"
+
+    if [ ! -p /tmp/snapfifo_spotify ]; then
+        mkfifo /tmp/snapfifo_spotify
+        chmod 666 /tmp/snapfifo_spotify
+        log_debug "Created Spotify FIFO pipe: /tmp/snapfifo_spotify"
+    fi
+
+    echo "stream = pipe:///tmp/snapfifo_spotify?name=Spotify&sampleformat=44100:16:2" >> "${CONFIG_FILE}"
     log_info "Added Spotify Connect stream: '${spotify_name}'"
     
     # Add AirPlay source if enabled
@@ -110,6 +122,13 @@ generate_config() {
         echo "codec = $(bashio::config 'codec')"
         echo "send_to_muted = $(bashio::config 'send_to_muted')"
         echo "sampleformat = $(bashio::config 'sampleformat')"
+        echo ""
+        echo "[streaming_client]"
+        if bashio::config.has_value 'default_client_volume'; then
+            echo "initial_volume = $(bashio::config 'default_client_volume')"
+        else
+            echo "initial_volume = 78"
+        fi
         echo ""
         echo "[http]"
         echo "doc_root = /usr/share/snapserver/snapweb"
@@ -157,11 +176,6 @@ main() {
     
     log_info "Starting snapserver..."
     log_debug "Command: /usr/bin/snapserver -c ${CONFIG_FILE}"
-    
-    export LIBRESPOT_AUTOPLAY="on"
-    export LIBRESPOT_ENABLE_VOLUME_NORMALISATION="true"
-    export LIBRESPOT_INITIAL_VOLUME="100"
-
     # Execute snapserver
     exec /usr/bin/snapserver -c "${CONFIG_FILE}"
 }

@@ -4,4 +4,9 @@ bashio::log.info "Starting Snapcast autogroup service..."
 sleep 5
 
 # Run the python script
+default_client_volume="78"
+if bashio::config.has_value 'default_client_volume'; then
+    default_client_volume="$(bashio::config 'default_client_volume')"
+fi
+export SNAPCAST_DEFAULT_CLIENT_VOLUME="${default_client_volume}"
 python3 /usr/local/bin/snapcast-autogroup.py

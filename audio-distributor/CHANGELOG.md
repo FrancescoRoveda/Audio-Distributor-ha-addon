@@ -1,5 +1,11 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 0.3.9
+- Run Spotify Connect as a supervised librespot service feeding Snapserver through a FIFO so the `spotify_name` device is advertised reliably.
+- Persist Snapserver state under `/data/snapserver` so client volumes survive add-on restarts.
+- Add `default_client_volume`, use it as Snapserver's first-connect volume, and lower reconnecting clients above that value to avoid unsafe 100% restart volume.
+- Use `default_client_volume` as the Spotify Connect initial volume.
+
 ## 0.3.8
 - Disable the Snapserver librespot watchdog to prevent Spotify Connect disappearing after idle time.
 
