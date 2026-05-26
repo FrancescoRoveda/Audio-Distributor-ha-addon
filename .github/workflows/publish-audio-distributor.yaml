@@ -9,6 +9,8 @@ on:
       - ".github/workflows/publish-audio-distributor.yaml"
   workflow_dispatch:
 
+concurrency: publish-audio-distributor
+
 jobs:
   build:
     runs-on: ubuntu-latest
