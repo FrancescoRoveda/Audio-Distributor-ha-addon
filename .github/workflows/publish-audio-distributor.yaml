@@ -7,7 +7,7 @@ on:
     paths:
       - "audio-distributor/**"
       - ".github/workflows/publish-audio-distributor.yaml"
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 concurrency: publish-audio-distributor
 
