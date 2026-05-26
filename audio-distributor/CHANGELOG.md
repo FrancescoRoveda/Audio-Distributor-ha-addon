@@ -1,5 +1,8 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 0.3.10
+- Build the add-on locally from the repository instead of requiring a prebuilt GHCR image tag.
+
 ## 0.3.9
 - Run Spotify Connect as a supervised librespot service feeding Snapserver through a FIFO so the `spotify_name` device is advertised reliably.
 - Persist Snapserver state under `/data/snapserver` so client volumes survive add-on restarts.
