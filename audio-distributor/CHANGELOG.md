@@ -1,5 +1,8 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 0.3.12
+- Bind Spotify Connect mDNS discovery to the host's primary LAN IPv4 address so Spotify clients do not receive Docker bridge addresses.
+
 ## 0.3.11
 - Pass the required `on` value to librespot's `--autoplay` option so Spotify Connect starts with librespot 0.8.0.
 

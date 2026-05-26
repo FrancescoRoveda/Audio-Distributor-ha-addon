@@ -25,6 +25,17 @@ avahi_ready() {
         / org.freedesktop.Avahi.Server.GetState 2>/dev/null | grep -q 'int32 2'
 }
 
+detect_primary_ipv4() {
+    ip -4 route get 1.1.1.1 2>/dev/null | awk '{
+        for (i = 1; i <= NF; i++) {
+            if ($i == "src") {
+                print $(i + 1)
+                exit
+            }
+        }
+    }'
+}
+
 log_info "Waiting for avahi-daemon..."
 timeout=60
 elapsed=0
@@ -59,11 +70,17 @@ if bashio::config.has_value 'default_client_volume'; then
     default_client_volume="$(bashio::config 'default_client_volume')"
 fi
 
+zeroconf_ip="$(detect_primary_ipv4)"
+zeroconf_args=()
+if [ -n "${zeroconf_ip}" ]; then
+    zeroconf_args=(--zeroconf-interface "${zeroconf_ip}")
+fi
+
 mkdir -p "${CACHE_DIR}/cache" "${CACHE_DIR}/system"
 
-verbosity=""
+verbosity_args=()
 if bashio::config.equals 'log_level' 'debug' || bashio::config.equals 'log_level' 'trace'; then
-    verbosity="--verbose"
+    verbosity_args=(--verbose)
     log_debug "Verbose librespot logging enabled"
 fi
 
@@ -71,6 +88,11 @@ log_notice "=== Spotify Connect Receiver starting ==="
 log_info "Device name: '${spotify_name}'"
 log_info "Output: pipe to ${FIFO_PATH}"
 log_info "Initial volume: ${default_client_volume}%"
+if [ -n "${zeroconf_ip}" ]; then
+    log_info "Spotify discovery interface: ${zeroconf_ip}"
+else
+    log_warning "Could not detect a primary IPv4 address; Spotify discovery will bind all interfaces"
+fi
 
 exec librespot \
     --name "${spotify_name}" \
@@ -85,4 +107,5 @@ exec librespot \
     --enable-volume-normalisation \
     --initial-volume "${default_client_volume}" \
     --autoplay on \
-    ${verbosity}
+    "${zeroconf_args[@]}" \
+    "${verbosity_args[@]}"
