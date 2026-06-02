@@ -7,7 +7,7 @@ configuration:
     description: Audio buffer in milliseconds
   codec:
     name: Codec
-    description: Codec for streaming to clients (flac recommended)
+    description: Codec for streaming to clients (opus recommended for Wi-Fi)
   send_to_muted:
     name: Send to muted clients
   sampleformat:

@@ -44,7 +44,7 @@ setup_spotify_env() {
     local spotify_name default_client_volume zeroconf_ip
 
     spotify_name=$(bashio::config 'spotify_name')
-    default_client_volume="78"
+    default_client_volume="85"
     if bashio::config.has_value 'default_client_volume'; then
         default_client_volume="$(bashio::config 'default_client_volume')"
     fi
@@ -54,7 +54,7 @@ setup_spotify_env() {
 
     export LIBRESPOT_AUTOPLAY="on"
     export LIBRESPOT_ENABLE_VOLUME_NORMALISATION="true"
-    export LIBRESPOT_INITIAL_VOLUME="${default_client_volume}"
+    export LIBRESPOT_INITIAL_VOLUME="100"
     export LIBRESPOT_CACHE="${CACHE_DIR}/cache"
     export LIBRESPOT_SYSTEM_CACHE="${CACHE_DIR}/system"
     export LIBRESPOT_DISABLE_AUDIO_CACHE="true"
@@ -67,7 +67,7 @@ setup_spotify_env() {
         log_warning "Could not detect primary IPv4 address; Spotify will advertise on all interfaces"
     fi
 
-    log_info "Spotify device name: '${spotify_name}', initial volume: ${default_client_volume}%"
+    log_info "Spotify device name: '${spotify_name}', initial volume: 100%"
 }
 
 # ==============================================================================
@@ -129,7 +129,7 @@ generate_config() {
     # Add Spotify source via Snapserver's internal librespot integration.
     local spotify_name
     spotify_name=$(bashio::config 'spotify_name')
-    echo "stream = librespot:///usr/bin/librespot?name=Spotify&devicename=${spotify_name}&disable_audio_cache=true&wd_timeout=0" >> "${CONFIG_FILE}"
+    echo "stream = librespot:///usr/bin/librespot?name=Spotify&devicename=${spotify_name}&disable_audio_cache=true&wd_timeout=0&initial_volume=100&autoplay=on&enable_volume_normalisation=true" >> "${CONFIG_FILE}"
     log_info "Added Spotify Connect stream: '${spotify_name}'"
     
     # Add AirPlay source if enabled
@@ -161,7 +161,7 @@ generate_config() {
         if bashio::config.has_value 'default_client_volume'; then
             echo "initial_volume = $(bashio::config 'default_client_volume')"
         else
-            echo "initial_volume = 78"
+            echo "initial_volume = 85"
         fi
         echo ""
         echo "[http]"

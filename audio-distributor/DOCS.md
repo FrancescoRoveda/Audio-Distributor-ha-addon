@@ -18,10 +18,10 @@ Multi-protocol audio distribution server for Home Assistant with Snapcast, Spoti
 | `spotify_name` | string | "Home Assistant Audio" | Device name shown in Spotify |
 | `airplay_enabled` | boolean | true | Enable AirPlay receiver |
 | `airplay_name` | string | "Home Assistant AirPlay" | Device name shown on Apple devices |
-| `buffer` | int | 1000 | Audio buffer in milliseconds |
-| `codec` | list | flac | Audio codec (pcm, flac, vorbis, opus) |
+| `buffer` | int | 5000 | Audio buffer in milliseconds |
+| `codec` | list | opus | Audio codec (pcm, flac, vorbis, opus) |
 | `sampleformat` | string | "48000:16:2" | Sample rate:bits:channels |
-| `default_client_volume` | int | 78 | Safe Snapcast client volume applied when clients connect after a server restart |
+| `default_client_volume` | int | 85 | Safe Snapcast client volume applied when clients connect after a server restart |
 | `log_level` | list | info | Logging verbosity |
 
 ### Custom Streams
@@ -48,7 +48,9 @@ You can add custom audio streams in the `streams.streams` list. See [Snapcast do
 
 ## Spotify Connect
 
-Spotify Connect runs as a dedicated `librespot` service and feeds Snapserver through `/tmp/snapfifo_spotify`. The device name shown in Spotify is controlled by `spotify_name`.
+Spotify Connect is managed by Snapserver's internal `librespot://` stream. The device name shown in Spotify is controlled by `spotify_name`, playback starts with Spotify autoplay enabled, the Spotify initial volume is `100`, and volume normalization remains enabled.
+
+The default `opus` codec and `5000` ms buffer reduce Wi-Fi bandwidth and smooth short wireless dropouts. This adds latency, so it is tuned for whole-home music playback rather than low-latency monitoring.
 
 ## Volume Safety
 

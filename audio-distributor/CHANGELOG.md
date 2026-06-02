@@ -1,5 +1,9 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 0.3.15
+- Default Snapserver to Opus with a 5000 ms buffer to reduce Wi-Fi dropouts.
+- Pass Spotify autoplay, volume normalization, and 100% initial volume explicitly to Snapserver's internal librespot stream.
+
 ## 0.3.14
 - Stop the placeholder Spotify Connect service from calling `s6-svc` on a non-existent service path, which caused a restart loop while Snapserver already manages librespot internally.
 
