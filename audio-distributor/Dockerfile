@@ -1,11 +1,30 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-dockerfile
 ARG BUILD_FROM=ghcr.io/hassio-addons/base:17.2.5
+FROM rust:1.88-alpine3.21 AS librespot-builder
+
+RUN \
+    apk add --no-cache \
+        alsa-lib-dev \
+        avahi-dev \
+        gcc \
+        git \
+        musl-dev \
+        openssl-dev \
+        pkgconf \
+        protobuf-dev \
+    && git clone --depth 1 --branch dev https://github.com/librespot-org/librespot.git /tmp/librespot \
+    && cd /tmp/librespot \
+    && RUSTFLAGS="-C target-feature=-crt-static" cargo build --release --locked --no-default-features --features "alsa-backend,with-dns-sd,rustls-tls-native-roots"
+
 FROM $BUILD_FROM
 
 # Install all packages from Alpine repositories
-# librespot is in edge/testing repository
 RUN \
-    apk add --no-cache \
+    while read -r pkg; do printf '%s\n' "${pkg%%=*}"; done < /etc/apk/world > /tmp/world \
+    && mv /tmp/world /etc/apk/world \
+    && apk upgrade --no-cache \
+    && apk add --no-cache \
+        alsa-lib \
         dbus \
         nss \
         avahi-compat-libdns_sd \
@@ -15,9 +34,6 @@ RUN \
         python3 \
         wget \
         unzip \
-    && apk add --no-cache \
-        --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing \
-        librespot \
     \
     # Download and install Snapweb
     && wget -q https://github.com/badaix/snapweb/releases/download/v0.9.3/snapweb.zip \
@@ -31,6 +47,8 @@ RUN \
     \
     # Cleanup
     && apk del --no-cache wget unzip
+
+COPY --from=librespot-builder /tmp/librespot/target/release/librespot /usr/bin/librespot
 
 # Copy root filesystem
 COPY rootfs /

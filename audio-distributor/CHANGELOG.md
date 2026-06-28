@@ -1,5 +1,8 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 0.3.16
+- Build librespot from upstream dev to include Spotify CDN fallback fixes.
+
 ## 0.3.15
 - Default Snapserver to Opus with a 5000 ms buffer to reduce Wi-Fi dropouts.
 - Pass Spotify autoplay, volume normalization, and 100% initial volume explicitly to Snapserver's internal librespot stream.
