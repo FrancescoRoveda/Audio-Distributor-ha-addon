@@ -1,5 +1,8 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 0.3.19
+- Keep raw DNS-SD service types in Avahi diagnostic output so AirPlay health checks are not broken by friendly-name translation.
+
 ## 0.3.18
 - Pin the Spotify Connect zeroconf HTTP endpoint to TCP port 24879 so a stable external mDNS responder can advertise it on hosts with competing mDNS stacks.
 - Recognize Avahi's escaped AirPlay instance names in discovery diagnostics.

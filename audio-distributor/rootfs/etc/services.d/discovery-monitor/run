@@ -89,7 +89,7 @@ detect_lan_ipv4() {
 
 browse_services() {
     local service_type="$1"
-    timeout 8 avahi-browse --parsable --terminate "${service_type}" 2>&1 || true
+    timeout 8 avahi-browse --parsable --no-db-lookup --terminate "${service_type}" 2>&1 || true
 }
 
 service_visible() {
