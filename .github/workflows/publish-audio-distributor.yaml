@@ -13,14 +13,16 @@ concurrency: publish-audio-distributor
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     name: Build ${{ matrix.arch }} image
     strategy:
       fail-fast: false
       matrix:
-        arch:
-          - aarch64
-          - amd64
+        include:
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+          - arch: amd64
+            runner: ubuntu-latest
     permissions:
       contents: read
       packages: write
