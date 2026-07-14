@@ -29,6 +29,8 @@ RUN \
         nss \
         avahi-compat-libdns_sd \
         avahi \
+        avahi-tools \
+        iproute2 \
         snapcast-server \
         shairport-sync \
         python3 \

@@ -56,6 +56,23 @@ The default `opus` codec and `5000` ms buffer reduce Wi-Fi bandwidth and smooth 
 
 Snapserver stores client state under `/data/snapserver` so client volumes survive add-on restarts. New clients start at `default_client_volume`, and reconnecting clients above that value are lowered to the configured safe default.
 
+## Discovery Diagnostics
+
+The add-on passively checks Spotify Connect and AirPlay discovery every 60 seconds. It does not restart or modify any service.
+
+The add-on log records:
+
+- Every discovery state change, including when either configured device name disappears or recovers
+- Whether D-Bus, Avahi, Snapserver, librespot, and shairport-sync are running
+- The primary LAN interface, IPv4 address, and mDNS multicast membership
+- The number and ownership of UDP port 5353 listeners
+- Other Spotify Connect and AirPlay names visible to Avahi when a failure occurs
+- An hourly heartbeat while the state remains unchanged
+
+Diagnostic events are also retained across add-on restarts in `/data/discovery-monitor.log`. The file is capped at 1 MiB and automatically reduced to its latest 1000 entries when it reaches the limit.
+
+Look for messages prefixed with `[discovery-monitor]` in the add-on log. The service is diagnostic-only so a missing advertisement remains observable instead of being hidden by an automatic restart.
+
 ## Support
 
 - [GitHub Issues](https://github.com/corneyl/hassio-addons/issues)

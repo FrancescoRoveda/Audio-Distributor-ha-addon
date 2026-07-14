@@ -1,0 +1,258 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Audio Distributor - Discovery diagnostics
+# Observes mDNS and process health without changing or restarting services.
+# ==============================================================================
+
+readonly LOG_PREFIX="[discovery-monitor]"
+readonly HISTORY_FILE="/data/discovery-monitor.log"
+readonly HISTORY_MAX_BYTES=1048576
+readonly CHECK_INTERVAL=60
+readonly HEARTBEAT_CYCLES=60
+
+previous_state=""
+cycle=0
+
+persist_log() {
+    local level="$1"
+    shift
+    local message="$*"
+
+    printf '%s [%s] %s\n' "$(date -Iseconds)" "${level}" "${message}" >> "${HISTORY_FILE}"
+
+    local size
+    size="$(wc -c < "${HISTORY_FILE}" 2>/dev/null || true)"
+    if [ -n "${size}" ] && [ "${size}" -gt "${HISTORY_MAX_BYTES}" ]; then
+        tail -n 1000 "${HISTORY_FILE}" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "${HISTORY_FILE}"
+    fi
+}
+
+log_info() {
+    bashio::log.info "${LOG_PREFIX} $*"
+    persist_log "INFO" "$*"
+}
+
+log_notice() {
+    bashio::log.notice "${LOG_PREFIX} $*"
+    persist_log "NOTICE" "$*"
+}
+
+log_warning() {
+    bashio::log.warning "${LOG_PREFIX} $*"
+    persist_log "WARNING" "$*"
+}
+
+dbus_ready() {
+    dbus-send --system --print-reply \
+        --dest=org.freedesktop.DBus \
+        /org/freedesktop/DBus org.freedesktop.DBus.ListNames >/dev/null 2>&1
+}
+
+avahi_ready() {
+    dbus-send --system --print-reply \
+        --dest=org.freedesktop.Avahi \
+        / org.freedesktop.Avahi.Server.GetState 2>/dev/null | grep -q 'int32 2'
+}
+
+process_pids() {
+    local pids
+
+    pids="$(pidof "$1" 2>/dev/null | tr ' ' ',' || true)"
+    if [ -n "${pids}" ]; then
+        printf '%s' "${pids}"
+    else
+        printf 'none'
+    fi
+}
+
+detect_lan_interface() {
+    ip -4 route get 1.1.1.1 2>/dev/null | awk '{
+        for (i = 1; i <= NF; i++) {
+            if ($i == "dev") {
+                print $(i + 1)
+                exit
+            }
+        }
+    }'
+}
+
+detect_lan_ipv4() {
+    ip -4 route get 1.1.1.1 2>/dev/null | awk '{
+        for (i = 1; i <= NF; i++) {
+            if ($i == "src") {
+                print $(i + 1)
+                exit
+            }
+        }
+    }'
+}
+
+browse_services() {
+    local service_type="$1"
+    timeout 8 avahi-browse --parsable --terminate "${service_type}" 2>&1 || true
+}
+
+service_visible() {
+    local services="$1"
+    local marker="$2"
+    printf '%s\n' "${services}" | grep -Fq "${marker}"
+}
+
+service_names() {
+    local services="$1"
+    local names
+
+    names="$(printf '%s\n' "${services}" | awk -F';' '$1 == "+" { print $4 }' | sort -u | paste -sd ',' -)"
+    if [ -n "${names}" ]; then
+        printf '%s' "${names}"
+    else
+        printf 'none'
+    fi
+}
+
+mdns_socket_count() {
+    local count
+    count="$(ss -H -u -l -n -p 2>/dev/null | grep -c ':5353 ' || true)"
+    printf '%s' "${count:-0}"
+}
+
+log_failure_details() {
+    local lan_interface="$1"
+    local spotify_services="$2"
+    local airplay_services="$3"
+    local socket_snapshot multicast_snapshot
+
+    socket_snapshot="$(ss -H -u -l -n -p 2>/dev/null | grep ':5353 ' | tr '\n' ' ' | cut -c 1-1200)"
+    if [ -n "${lan_interface}" ]; then
+        multicast_snapshot="$(ip maddr show dev "${lan_interface}" 2>/dev/null | tr '\n' ' ' | cut -c 1-1200)"
+    else
+        multicast_snapshot="interface-unavailable"
+    fi
+
+    log_warning "Spotify services visible to Avahi: $(service_names "${spotify_services}")"
+    log_warning "AirPlay services visible to Avahi: $(service_names "${airplay_services}")"
+    log_warning "UDP 5353 sockets: ${socket_snapshot:-none}"
+    log_warning "LAN multicast memberships: ${multicast_snapshot:-none}"
+}
+
+log_initial_details() {
+    local lan_interface="$1"
+    local spotify_services="$2"
+    local airplay_services="$3"
+    local socket_snapshot multicast_snapshot
+
+    socket_snapshot="$(ss -H -u -l -n -p 2>/dev/null | grep ':5353 ' | tr '\n' ' ' | cut -c 1-1200)"
+    if [ -n "${lan_interface}" ]; then
+        multicast_snapshot="$(ip maddr show dev "${lan_interface}" 2>/dev/null | tr '\n' ' ' | cut -c 1-1200)"
+    else
+        multicast_snapshot="interface-unavailable"
+    fi
+
+    log_info "Initial Spotify services visible to Avahi: $(service_names "${spotify_services}")"
+    log_info "Initial AirPlay services visible to Avahi: $(service_names "${airplay_services}")"
+    log_info "Initial UDP 5353 sockets: ${socket_snapshot:-none}"
+    log_info "Initial LAN multicast memberships: ${multicast_snapshot:-none}"
+}
+
+check_discovery() {
+    local spotify_name airplay_name airplay_enabled
+    local dbus avahi snapserver_pids librespot_pids shairport_pids
+    local lan_interface lan_ipv4 multicast mdns_sockets
+    local spotify_services airplay_services spotify_visible airplay_visible
+    local state healthy
+
+    spotify_name="$(bashio::config 'spotify_name')"
+    airplay_name="$(bashio::config 'airplay_name')"
+    if bashio::config.true 'airplay_enabled'; then
+        airplay_enabled="yes"
+    else
+        airplay_enabled="no"
+    fi
+
+    if dbus_ready; then dbus="up"; else dbus="down"; fi
+    if avahi_ready; then avahi="up"; else avahi="down"; fi
+    snapserver_pids="$(process_pids snapserver)"
+    librespot_pids="$(process_pids librespot)"
+    shairport_pids="$(process_pids shairport-sync)"
+
+    lan_interface="$(detect_lan_interface)"
+    lan_ipv4="$(detect_lan_ipv4)"
+    if [ -n "${lan_interface}" ] && ip maddr show dev "${lan_interface}" 2>/dev/null | grep -q '224.0.0.251'; then
+        multicast="joined"
+    else
+        multicast="missing"
+    fi
+    mdns_sockets="$(mdns_socket_count)"
+
+    if [ "${avahi}" = "up" ]; then
+        spotify_services="$(browse_services '_spotify-connect._tcp')"
+        if service_visible "${spotify_services}" ";${spotify_name};_spotify-connect._tcp;"; then
+            spotify_visible="yes"
+        else
+            spotify_visible="no"
+        fi
+
+        if [ "${airplay_enabled}" = "yes" ]; then
+            airplay_services="$(browse_services '_raop._tcp')"
+            if service_visible "${airplay_services}" "@${airplay_name};_raop._tcp;"; then
+                airplay_visible="yes"
+            else
+                airplay_visible="no"
+            fi
+        else
+            airplay_services=""
+            airplay_visible="disabled"
+        fi
+    else
+        spotify_services=""
+        airplay_services=""
+        spotify_visible="unknown"
+        if [ "${airplay_enabled}" = "yes" ]; then
+            airplay_visible="unknown"
+        else
+            airplay_visible="disabled"
+        fi
+    fi
+
+    state="spotify=${spotify_visible} airplay=${airplay_visible} dbus=${dbus} avahi=${avahi} snapserver_pid=${snapserver_pids} librespot_pid=${librespot_pids} shairport_pid=${shairport_pids} iface=${lan_interface:-none} ip=${lan_ipv4:-none} multicast=${multicast} mdns_sockets=${mdns_sockets}"
+
+    healthy="yes"
+    if [ "${spotify_visible}" != "yes" ] || [ "${dbus}" != "up" ] || [ "${avahi}" != "up" ] || \
+       [ "${snapserver_pids}" = "none" ] || [ "${librespot_pids}" = "none" ] || [ "${multicast}" != "joined" ]; then
+        healthy="no"
+    fi
+    if [ "${airplay_enabled}" = "yes" ] && { [ "${airplay_visible}" != "yes" ] || [ "${shairport_pids}" = "none" ]; }; then
+        healthy="no"
+    fi
+
+    if [ -z "${previous_state}" ]; then
+        log_notice "Initial state: ${state}"
+        log_initial_details "${lan_interface}" "${spotify_services}" "${airplay_services}"
+        if [ "${healthy}" = "no" ]; then
+            log_failure_details "${lan_interface}" "${spotify_services}" "${airplay_services}"
+        fi
+    elif [ "${state}" != "${previous_state}" ]; then
+        if [ "${healthy}" = "yes" ]; then
+            log_notice "Discovery recovered or changed: ${state}"
+        else
+            log_warning "Discovery degraded or changed: ${state}"
+            log_failure_details "${lan_interface}" "${spotify_services}" "${airplay_services}"
+        fi
+    elif [ $((cycle % HEARTBEAT_CYCLES)) -eq 0 ]; then
+        log_info "Hourly heartbeat: ${state}"
+    fi
+
+    previous_state="${state}"
+}
+
+mkdir -p /data
+touch "${HISTORY_FILE}"
+
+log_info "Starting passive discovery diagnostics (interval=${CHECK_INTERVAL}s, history=${HISTORY_FILE})"
+sleep 15
+
+while true; do
+    cycle=$((cycle + 1))
+    check_discovery
+    sleep "${CHECK_INTERVAL}"
+done

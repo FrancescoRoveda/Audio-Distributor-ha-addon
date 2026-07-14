@@ -1,5 +1,9 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 0.3.17
+- Add persistent discovery diagnostics for Spotify Connect and AirPlay, including mDNS visibility, process health, D-Bus/Avahi readiness, LAN multicast state, and UDP 5353 listeners.
+- Log discovery state transitions immediately and healthy state heartbeats hourly without automatically restarting services.
+
 ## 0.3.16
 - Build librespot from upstream dev to include Spotify CDN fallback fixes.
 
