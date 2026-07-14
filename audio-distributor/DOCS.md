@@ -36,6 +36,7 @@ You can add custom audio streams in the `streams.streams` list. See [Snapcast do
 | 1705 | TCP | Snapcast control interface |
 | 1780 | TCP | Snapweb interface (ingress) |
 | 5000 | TCP | AirPlay receiver |
+| 24879 | TCP | Spotify Connect zeroconf HTTP endpoint |
 
 ## Usage
 
@@ -48,7 +49,7 @@ You can add custom audio streams in the `streams.streams` list. See [Snapcast do
 
 ## Spotify Connect
 
-Spotify Connect is managed by Snapserver's internal `librespot://` stream. The device name shown in Spotify is controlled by `spotify_name`, playback starts with Spotify autoplay enabled, the Spotify initial volume is `100`, and volume normalization remains enabled.
+Spotify Connect is managed by Snapserver's internal `librespot://` stream. The device name shown in Spotify is controlled by `spotify_name`, playback starts with Spotify autoplay enabled, the Spotify initial volume is `100`, and volume normalization remains enabled. Its zeroconf HTTP endpoint uses the fixed TCP port `24879` so another mDNS responder can advertise the service when the Home Assistant host already has a conflicting responder on UDP port `5353`.
 
 The default `opus` codec and `5000` ms buffer reduce Wi-Fi bandwidth and smooth short wireless dropouts. This adds latency, so it is tuned for whole-home music playback rather than low-latency monitoring.
 

@@ -194,7 +194,7 @@ check_discovery() {
 
         if [ "${airplay_enabled}" = "yes" ]; then
             airplay_services="$(browse_services '_raop._tcp')"
-            if service_visible "${airplay_services}" "@${airplay_name};_raop._tcp;"; then
+            if service_visible "${airplay_services}" "${airplay_name};_raop._tcp;"; then
                 airplay_visible="yes"
             else
                 airplay_visible="no"
